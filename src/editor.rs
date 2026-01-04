@@ -717,7 +717,7 @@ impl DataTableEditor {
         // Refresh all open tables
         if let Err(e) = self.refresh_data(cx) {
             tracing::error!("Failed to reload table data: {}", e);
-            return Err(plugin_editor_api::PluginError::Custom {
+            return Err(plugin_editor_api::PluginError::Other {
                 message: format!("Failed to reload: {}", e),
             });
         }
