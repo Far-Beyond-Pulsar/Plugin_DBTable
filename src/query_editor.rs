@@ -1,10 +1,10 @@
 use gpui::{prelude::*, *};
 use ui::{
     h_flex, v_flex, button::{Button, ButtonVariants}, label::Label,
-    input::{TextInput, InputState, TabSize, InputEvent},
+    input::{TextInput, InputState, TabSize},
     divider::Divider, IconName,
-    table::{Table, TableDelegate, Column, ColumnSort, TableEvent},
-    ActiveTheme, Sizable, Size, StyleSized, StyledExt, Disableable,
+    table::{Table, TableDelegate, Column},
+    ActiveTheme, Sizable, Size, StyledExt, Disableable,
 };
 use crate::database::{DatabaseManager, CellValue};
 use std::time::Instant;
@@ -695,7 +695,7 @@ impl Focusable for QueryEditorView {
 
 impl Render for QueryEditorView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let show_sidebar = self.editor.read(cx).show_schema_sidebar;
+        let _show_sidebar = self.editor.read(cx).show_schema_sidebar;
 
         //let schema_sidebar = self.editor.update(cx, |editor, cx| {
         //    editor.render_schema_sidebar(cx)

@@ -1,15 +1,13 @@
 use gpui::{prelude::*, *};
 use ui::{
-    h_flex, v_flex, button::Button, table::{Column, ColumnSort, Table, TableDelegate, TableEvent},
+    table::{Column, ColumnSort, Table, TableDelegate},
     input::{TextInput, InputState, TabSize},
-    label::Label, IconName,
-    ActiveTheme, Sizable, Size, StyleSized, StyledExt, Selectable,
+    ActiveTheme, Size, StyledExt,
 };
 use std::ops::Range;
 use crate::{
-    database::{DatabaseManager, RowData, CellValue},
+    database::{DatabaseManager, RowData},
     reflection::TypeSchema,
-    cell_editors::{CellEditor, CellEditorView},
 };
 
 pub struct DataTableState {
@@ -377,7 +375,7 @@ impl TableDelegate for DataTableView {
         &self,
         row_ix: usize,
         col_ix: usize,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Table<Self>>,
     ) -> impl IntoElement {
         if let Some(row) = self.rows.get(row_ix) {

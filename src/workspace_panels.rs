@@ -1,10 +1,8 @@
 use gpui::*;
-use ui::{ActiveTheme, StyledExt, dock::{Panel, PanelEvent}, v_flex, table::Table};
-use std::path::PathBuf;
+use ui::{ActiveTheme, dock::{Panel, PanelEvent}, v_flex, table::Table};
 use crate::{
     table_view::DataTableView,
     query_editor::QueryEditorView,
-    database::DatabaseManager,
 };
 
 /// Table Panel - wraps a single table view
