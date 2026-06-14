@@ -1,7 +1,4 @@
 use gpui::{prelude::*, *};
-use ui::{
-    h_flex, v_flex, ActiveTheme, Sizable, StyleSized, StyledExt,
-};
 use serde_json::Value;
 use crate::reflection::SqlType;
 

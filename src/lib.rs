@@ -14,11 +14,8 @@
 //! - **Table Editor**: Multi-panel editor with table browser, query editor, and data view
 
 use plugin_editor_api::*;
-use serde_json::json;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::Mutex;
-use std::collections::HashMap;
 use gpui::*;
 use ui::dock::PanelView;
 
@@ -37,26 +34,9 @@ pub use database::DatabaseManager;
 pub use reflection::TypeSchema;
 pub use workspace_panels::*;
 
-/// Storage for editor instances owned by the plugin
-struct EditorStorage {
-    panel: Arc<dyn ui::dock::PanelView>,
-    wrapper: Box<TableEditorWrapper>,
-}
-
 /// The Table Editor Plugin
-pub struct TableEditorPlugin {
-    editors: Arc<Mutex<HashMap<usize, EditorStorage>>>,
-    next_editor_id: Arc<Mutex<usize>>,
-}
-
-impl Default for TableEditorPlugin {
-    fn default() -> Self {
-        Self {
-            editors: Arc::new(Mutex::new(HashMap::new())),
-            next_editor_id: Arc::new(Mutex::new(0)),
-        }
-    }
-}
+#[derive(Default)]
+pub struct TableEditorPlugin;
 
 impl EditorPlugin for TableEditorPlugin {
     fn metadata(&self) -> PluginMetadata {
@@ -122,9 +102,7 @@ impl EditorPlugin for TableEditorPlugin {
         file_path: PathBuf,
         window: &mut Window,
         cx: &mut App,
-        logger: &plugin_editor_api::EditorLogger,
-    ) -> Result<(Arc<dyn PanelView>, Box<dyn EditorInstance>), PluginError> {
-        logger.info("TABLE EDITOR LOADED!!");
+    ) -> Result<Arc<dyn PanelView>, PluginError> {
         if editor_id.as_str() == "table-editor" {
             let panel = cx.new(|cx| {
                 DataTableEditor::open_database(file_path.clone(), window, cx)
@@ -134,26 +112,10 @@ impl EditorPlugin for TableEditorPlugin {
                     })
             });
 
-            let panel_arc: Arc<dyn ui::dock::PanelView> = Arc::new(panel.clone());
-            let wrapper = Box::new(TableEditorWrapper {
-                panel: panel.into(),
-                file_path: file_path.clone(),
-            });
+            let panel_arc: Arc<dyn ui::dock::PanelView> = Arc::new(panel);
 
-            let id = {
-                let mut next_id = self.next_editor_id.lock().unwrap();
-                let id = *next_id;
-                *next_id += 1;
-                id
-            };
-
-            self.editors.lock().unwrap().insert(id, EditorStorage {
-                panel: panel_arc.clone(),
-                wrapper: wrapper.clone(),
-            });
-
-            log::info!("Created table editor instance {} for {:?}", id, file_path);
-            Ok((panel_arc, wrapper))
+            log::info!("Created table editor for {:?}", file_path);
+            Ok(panel_arc)
         } else {
             Err(PluginError::EditorNotFound { editor_id })
         }
@@ -162,45 +124,4 @@ impl EditorPlugin for TableEditorPlugin {
     fn on_load(&mut self) {
         log::info!("Table Editor Plugin loaded");
     }
-
-    fn on_unload(&mut self) {
-        let mut editors = self.editors.lock().unwrap();
-        let count = editors.len();
-        editors.clear();
-        log::info!("Table Editor Plugin unloaded (cleaned up {} editors)", count);
-    }
 }
-
-#[derive(Clone)]
-pub struct TableEditorWrapper {
-    panel: Entity<DataTableEditor>,
-    file_path: std::path::PathBuf,
-}
-
-impl plugin_editor_api::EditorInstance for TableEditorWrapper {
-    fn file_path(&self) -> &std::path::PathBuf {
-        &self.file_path
-    }
-
-    fn save(&mut self, window: &mut Window, cx: &mut App) -> Result<(), PluginError> {
-        self.panel.update(cx, |panel, cx| {
-            panel.plugin_save(window, cx)
-        })
-    }
-
-    fn reload(&mut self, window: &mut Window, cx: &mut App) -> Result<(), PluginError> {
-        self.panel.update(cx, |panel, cx| {
-            panel.plugin_reload(window, cx)
-        })
-    }
-
-    fn is_dirty(&self) -> bool {
-        false
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-}
-
-export_plugin!(TableEditorPlugin);

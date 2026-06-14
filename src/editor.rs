@@ -1,6 +1,6 @@
 use gpui::{prelude::*, *};
 use ui::{
-    h_flex, v_flex, button::{Button, ButtonVariants}, label::Label, divider::Divider,
+    h_flex, v_flex, button::{Button, ButtonVariants}, divider::Divider,
     table::Table, ActiveTheme, Sizable, StyledExt, Disableable,
     dock::{Panel, PanelEvent, DockChannel}, IconName, Icon,
 };
@@ -129,7 +129,7 @@ impl DataTableEditor {
         
         // Find the first TabPanel in the workspace and add new tabs to it
         if let Some(workspace) = self.workspace.clone() {
-            let num_existing_panels = self.open_tabs.len() - 1; // All but the last one
+            let _num_existing_panels = self.open_tabs.len() - 1; // All but the last one
             
             // Get the last tab that was just added
             if let Some(last_tab) = self.open_tabs.last() {
@@ -331,7 +331,7 @@ impl DataTableEditor {
     pub fn add_new_row(&mut self, cx: &mut Context<Self>) -> anyhow::Result<()> {
         if let Some(active_idx) = self.active_tab_idx {
             if let Some(tab) = self.open_tabs.get(active_idx) {
-                if let TabType::Table { view, name, .. } = &tab.tab_type {
+                if let TabType::Table { view, name: _, .. } = &tab.tab_type {
                     view.update(cx, |table, cx| {
                         if let Err(e) = table.delegate_mut().add_new_row() {
                             tracing::error!("Failed to add row: {}", e);
@@ -348,7 +348,7 @@ impl DataTableEditor {
     pub fn delete_selected_row(&mut self, cx: &mut Context<Self>) -> anyhow::Result<()> {
         if let Some(active_idx) = self.active_tab_idx {
             if let Some(tab) = self.open_tabs.get(active_idx) {
-                if let TabType::Table { view, name, .. } = &tab.tab_type {
+                if let TabType::Table { view, name: _, .. } = &tab.tab_type {
                     view.update(cx, |table, cx| {
                         let delegate = table.delegate_mut();
                         if let Some(selected_row) = delegate.state.selected_row {
@@ -713,7 +713,7 @@ impl DataTableEditor {
     }
 
     /// Plugin-specific reload method
-    pub fn plugin_reload(&mut self, window: &mut Window, cx: &mut Context<Self>) -> Result<(), plugin_editor_api::PluginError> {
+    pub fn plugin_reload(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> Result<(), plugin_editor_api::PluginError> {
         // Refresh all open tables
         if let Err(e) = self.refresh_data(cx) {
             tracing::error!("Failed to reload table data: {}", e);

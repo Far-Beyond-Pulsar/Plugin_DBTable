@@ -4,7 +4,7 @@ use parking_lot::RwLock;
 use std::sync::Arc;
 use std::collections::HashMap;
 use serde_json::Value;
-use crate::reflection::{TypeSchema, SqlType};
+use crate::reflection::TypeSchema;
 
 #[derive(Debug, Clone)]
 pub struct CellValue {
