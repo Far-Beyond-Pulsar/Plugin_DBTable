@@ -96,14 +96,14 @@ impl EditorPlugin for TableEditorPlugin {
         }]
     }
 
-    fn create_editor(
-        &self,
-        editor_id: EditorId,
-        file_path: PathBuf,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> Result<Arc<dyn PanelView>, PluginError> {
-        if editor_id.as_str() == "table-editor" {
+    fn on_load(&mut self) {
+        log::info!("Table Editor Plugin loaded");
+    }
+}
+
+impl EditorPluginEditor for TableEditorPlugin {
+    fn register_editors(&'static self, registry: &mut EditorFactoryRegistry) {
+        registry.register_fn(EditorId::new("table-editor"), |file_path, window, cx| {
             let panel = cx.new(|cx| {
                 DataTableEditor::open_database(file_path.clone(), window, cx)
                     .unwrap_or_else(|e| {
@@ -116,12 +116,19 @@ impl EditorPlugin for TableEditorPlugin {
 
             log::info!("Created table editor for {:?}", file_path);
             Ok(panel_arc)
-        } else {
-            Err(PluginError::EditorNotFound { editor_id })
-        }
+        });
     }
+}
 
-    fn on_load(&mut self) {
-        log::info!("Table Editor Plugin loaded");
+impl EditorPluginStatusbar for TableEditorPlugin {}
+impl EditorPluginAi for TableEditorPlugin {}
+impl EditorPluginComponents for TableEditorPlugin {
+    fn component_definitions(&self) -> Vec<ComponentDefinition> {
+        Vec::new()
+    }
+}
+impl EditorPluginSubsystems for TableEditorPlugin {
+    fn subsystems(&self) -> Vec<Box<dyn Subsystem>> {
+        Vec::new()
     }
 }
