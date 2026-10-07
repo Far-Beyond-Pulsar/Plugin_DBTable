@@ -59,6 +59,7 @@ impl EditorPlugin for TableEditorPlugin {
                 color: gpui::rgb(0x4CAF50).into(),
                 structure: FileStructure::Standalone,
                 default_content: serde_json::Value::Null,
+                creation_directory: None,
                 categories: vec!["Data".to_string(), "SQLite".to_string()],
             },
             FileTypeDefinition {
@@ -69,6 +70,7 @@ impl EditorPlugin for TableEditorPlugin {
                 color: gpui::rgb(0x4CAF50).into(),
                 structure: FileStructure::Standalone,
                 default_content: serde_json::Value::Null,
+                creation_directory: None,
                 categories: vec!["Data".to_string(), "SQLite".to_string()],
             },
             FileTypeDefinition {
@@ -79,6 +81,7 @@ impl EditorPlugin for TableEditorPlugin {
                 color: gpui::rgb(0x4CAF50).into(),
                 structure: FileStructure::Standalone,
                 default_content: serde_json::Value::Null,
+                creation_directory: None,
                 categories: vec!["Data".to_string(), "SQLite".to_string()],
             },
         ]
