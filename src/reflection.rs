@@ -19,7 +19,7 @@ impl SqlType {
             SqlType::Text => "TEXT".to_string(),
             SqlType::Blob => "BLOB".to_string(),
             SqlType::Boolean => "INTEGER".to_string(), // SQLite doesn't have native boolean
-            SqlType::DateTime => "TEXT".to_string(),    // Store as ISO 8601 string
+            SqlType::DateTime => "TEXT".to_string(),   // Store as ISO 8601 string
             SqlType::ForeignKey { table } => format!("INTEGER REFERENCES {}(id)", table),
         }
     }

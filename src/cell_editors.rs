@@ -1,15 +1,28 @@
+use crate::reflection::SqlType;
 use gpui::{prelude::*, *};
 use serde_json::Value;
-use crate::reflection::SqlType;
 
 #[derive(Clone, Debug)]
 pub enum CellEditor {
-    Text { value: String },
-    Integer { value: String },
-    Real { value: String },
-    Boolean { value: bool },
-    ForeignKey { selected_id: Option<i64>, options: Vec<(i64, String)> },
-    DateTime { value: String },
+    Text {
+        value: String,
+    },
+    Integer {
+        value: String,
+    },
+    Real {
+        value: String,
+    },
+    Boolean {
+        value: bool,
+    },
+    ForeignKey {
+        selected_id: Option<i64>,
+        options: Vec<(i64, String)>,
+    },
+    DateTime {
+        value: String,
+    },
 }
 
 impl CellEditor {
@@ -30,9 +43,7 @@ impl CellEditor {
                 CellEditor::Real { value }
             }
             SqlType::Boolean => {
-                let value = current_value
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(false);
+                let value = current_value.and_then(|v| v.as_bool()).unwrap_or(false);
                 CellEditor::Boolean { value }
             }
             SqlType::ForeignKey { .. } => CellEditor::ForeignKey {
@@ -61,28 +72,22 @@ impl CellEditor {
     pub fn to_value(&self) -> Result<Value, String> {
         match self {
             CellEditor::Text { value } => Ok(Value::String(value.clone())),
-            CellEditor::Integer { value } => {
-                value
-                    .parse::<i64>()
-                    .map(|i| Value::Number(i.into()))
-                    .map_err(|e| format!("Invalid integer: {}", e))
-            }
-            CellEditor::Real { value } => {
-                value
-                    .parse::<f64>()
-                    .map_err(|e| format!("Invalid number: {}", e))
-                    .and_then(|f| {
-                        serde_json::Number::from_f64(f)
-                            .ok_or_else(|| "Invalid float".to_string())
-                            .map(Value::Number)
-                    })
-            }
+            CellEditor::Integer { value } => value
+                .parse::<i64>()
+                .map(|i| Value::Number(i.into()))
+                .map_err(|e| format!("Invalid integer: {}", e)),
+            CellEditor::Real { value } => value
+                .parse::<f64>()
+                .map_err(|e| format!("Invalid number: {}", e))
+                .and_then(|f| {
+                    serde_json::Number::from_f64(f)
+                        .ok_or_else(|| "Invalid float".to_string())
+                        .map(Value::Number)
+                }),
             CellEditor::Boolean { value } => Ok(Value::Bool(*value)),
-            CellEditor::ForeignKey { selected_id, .. } => {
-                selected_id
-                    .map(|id| Value::Number(id.into()))
-                    .ok_or_else(|| "No foreign key selected".to_string())
-            }
+            CellEditor::ForeignKey { selected_id, .. } => selected_id
+                .map(|id| Value::Number(id.into()))
+                .ok_or_else(|| "No foreign key selected".to_string()),
             CellEditor::DateTime { value } => Ok(Value::String(value.clone())),
         }
     }
@@ -100,22 +105,14 @@ pub struct CellEditorView {
 
 impl CellEditorView {
     pub fn new(editor: CellEditor) -> Self {
-        Self {
-            editor,
-        }
+        Self { editor }
     }
 
     fn render_text_editor(&self, value: String, _cx: &mut App) -> impl IntoElement {
         div()
             .w_full()
             .h_full()
-            .child(
-                div()
-                    .px_2()
-                    .py_1()
-                    .text_sm()
-                    .child(value)
-            )
+            .child(div().px_2().py_1().text_sm().child(value))
     }
 
     fn render_integer_editor(&self, value: String, cx: &mut App) -> impl IntoElement {
@@ -133,12 +130,7 @@ impl CellEditorView {
             .flex()
             .items_center()
             .justify_center()
-            .child(
-                div()
-                    .px_2()
-                    .text_sm()
-                    .child(if _value { "✓" } else { "✗" })
-            )
+            .child(div().px_2().text_sm().child(if _value { "✓" } else { "✗" }))
     }
 
     fn render_foreign_key_editor(
@@ -160,13 +152,7 @@ impl CellEditorView {
         div()
             .w_full()
             .h_full()
-            .child(
-                div()
-                    .px_2()
-                    .py_1()
-                    .text_sm()
-                    .child(display)
-            )
+            .child(div().px_2().py_1().text_sm().child(display))
     }
 
     fn render_datetime_editor(&self, value: String, cx: &mut App) -> impl IntoElement {
@@ -183,7 +169,10 @@ impl IntoElement for CellEditorView {
             CellEditor::Integer { value } => div().child(value.clone()),
             CellEditor::Real { value } => div().child(value.clone()),
             CellEditor::Boolean { value } => div().child(if *value { "✓" } else { "✗" }),
-            CellEditor::ForeignKey { selected_id, options } => {
+            CellEditor::ForeignKey {
+                selected_id,
+                options,
+            } => {
                 let display = if let Some(id) = selected_id {
                     options
                         .iter()

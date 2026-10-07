@@ -1,18 +1,21 @@
-use gpui::{prelude::*, *};
-use ui::{
-    h_flex, v_flex, button::{Button, ButtonVariants}, divider::Divider,
-    table::Table, ActiveTheme, Sizable, StyledExt, Disableable,
-    dock::{Panel, PanelEvent, DockChannel}, IconName, Icon,
-};
 use crate::{
     database::DatabaseManager,
-    table_view::DataTableView,
     query_editor::QueryEditorView,
     reflection::TypeSchema,
-    workspace_panels::{TablePanelWrapper, QueryPanelWrapper, WelcomePanelWrapper},
+    table_view::DataTableView,
+    workspace_panels::{QueryPanelWrapper, TablePanelWrapper, WelcomePanelWrapper},
 };
-use std::path::PathBuf;
+use gpui::{prelude::*, *};
 use std::collections::HashMap;
+use std::path::PathBuf;
+use ui::{
+    button::{Button, ButtonVariants},
+    divider::Divider,
+    dock::{DockChannel, Panel, PanelEvent},
+    h_flex,
+    table::Table,
+    v_flex, ActiveTheme, Disableable, Icon, IconName, Sizable, StyledExt,
+};
 
 #[derive(Clone, Debug)]
 pub enum DataTableEvent {
@@ -24,8 +27,14 @@ pub enum DataTableEvent {
 
 #[derive(Clone, Debug)]
 enum TabType {
-    Table { name: String, view: Entity<Table<DataTableView>> },
-    Query { name: String, view: Entity<QueryEditorView> },
+    Table {
+        name: String,
+        view: Entity<Table<DataTableView>>,
+    },
+    Query {
+        name: String,
+        view: Entity<QueryEditorView>,
+    },
 }
 
 struct EditorTab {
@@ -59,7 +68,7 @@ impl DataTableEditor {
                 "table-editor-workspace",
                 DockChannel(5), // Unique channel for table editor
                 window,
-                cx
+                cx,
             )
         });
 
@@ -77,12 +86,16 @@ impl DataTableEditor {
         }
     }
 
-    pub fn open_database(path: PathBuf, window: &mut Window, cx: &mut Context<Self>) -> anyhow::Result<Self> {
+    pub fn open_database(
+        path: PathBuf,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> anyhow::Result<Self> {
         let db = DatabaseManager::new(&path)?;
-        
+
         // Auto-discover schemas from existing tables
         db.introspect_and_register_schemas()?;
-        
+
         let available_tables = db.list_tables()?;
 
         // Create internal workspace for table/query tabs
@@ -91,10 +104,10 @@ impl DataTableEditor {
                 "table-editor-workspace",
                 DockChannel(5), // Unique channel for table editor
                 window,
-                cx
+                cx,
             )
         });
-        
+
         // Initialize with database expanded by default
         let mut expanded_databases = HashMap::new();
         if let Some(db_name) = path.file_stem().and_then(|s| s.to_str()) {
@@ -126,33 +139,31 @@ impl DataTableEditor {
         if self.open_tabs.is_empty() || !self.workspace_initialized {
             return;
         }
-        
+
         // Find the first TabPanel in the workspace and add new tabs to it
         if let Some(workspace) = self.workspace.clone() {
             let _num_existing_panels = self.open_tabs.len() - 1; // All but the last one
-            
+
             // Get the last tab that was just added
             if let Some(last_tab) = self.open_tabs.last() {
                 let panel: std::sync::Arc<dyn ui::dock::PanelView> = match &last_tab.tab_type {
                     TabType::Table { name, view } => {
-                        let panel = cx.new(|cx| {
-                            TablePanelWrapper::new(name.clone(), view.clone(), cx)
-                        });
+                        let panel =
+                            cx.new(|cx| TablePanelWrapper::new(name.clone(), view.clone(), cx));
                         std::sync::Arc::new(panel)
                     }
                     TabType::Query { name, view } => {
-                        let panel = cx.new(|cx| {
-                            QueryPanelWrapper::new(name.clone(), view.clone(), cx)
-                        });
+                        let panel =
+                            cx.new(|cx| QueryPanelWrapper::new(name.clone(), view.clone(), cx));
                         std::sync::Arc::new(panel)
                     }
                 };
-                
+
                 // Defer adding the panel to avoid reentrant updates
                 window.defer(cx, move |window, cx| {
                     _ = workspace.update(cx, |workspace, cx| {
                         let dock_area = workspace.dock_area();
-                        
+
                         // Get the first TabPanel from the center items
                         if let Some(tab_panel) = dock_area.read(cx).items().left_top_tab_panel(cx) {
                             _ = tab_panel.update(cx, |tab_panel, cx| {
@@ -170,20 +181,19 @@ impl DataTableEditor {
         if self.workspace_initialized {
             return;
         }
-        
+
         if let Some(ref workspace) = self.workspace {
             workspace.update(cx, |workspace, cx| {
                 let dock_area = workspace.dock_area().downgrade();
-                
+
                 if self.open_tabs.is_empty() {
                     // Show welcome panel when no tabs
-                    let welcome_panel = cx.new(|cx| {
-                        WelcomePanelWrapper::new(cx)
-                    });
-                    
+                    let welcome_panel = cx.new(|cx| WelcomePanelWrapper::new(cx));
+
                     workspace.initialize(
                         ui::dock::DockItem::tabs(
-                            vec![std::sync::Arc::new(welcome_panel) as std::sync::Arc<dyn ui::dock::PanelView>],
+                            vec![std::sync::Arc::new(welcome_panel)
+                                as std::sync::Arc<dyn ui::dock::PanelView>],
                             Some(0),
                             &dock_area,
                             window,
@@ -197,26 +207,27 @@ impl DataTableEditor {
                     );
                 } else {
                     // Create panels for all open tabs
-                    let tab_panels: Vec<std::sync::Arc<dyn ui::dock::PanelView>> = self.open_tabs
+                    let tab_panels: Vec<std::sync::Arc<dyn ui::dock::PanelView>> = self
+                        .open_tabs
                         .iter()
-                        .map(|tab| {
-                            match &tab.tab_type {
-                                TabType::Table { name, view } => {
-                                    let panel = cx.new(|cx| {
-                                        TablePanelWrapper::new(name.clone(), view.clone(), cx)
-                                    });
-                                    std::sync::Arc::new(panel) as std::sync::Arc<dyn ui::dock::PanelView>
-                                }
-                                TabType::Query { name, view } => {
-                                    let panel = cx.new(|cx| {
-                                        QueryPanelWrapper::new(name.clone(), view.clone(), cx)
-                                    });
-                                    std::sync::Arc::new(panel) as std::sync::Arc<dyn ui::dock::PanelView>
-                                }
+                        .map(|tab| match &tab.tab_type {
+                            TabType::Table { name, view } => {
+                                let panel = cx.new(|cx| {
+                                    TablePanelWrapper::new(name.clone(), view.clone(), cx)
+                                });
+                                std::sync::Arc::new(panel)
+                                    as std::sync::Arc<dyn ui::dock::PanelView>
+                            }
+                            TabType::Query { name, view } => {
+                                let panel = cx.new(|cx| {
+                                    QueryPanelWrapper::new(name.clone(), view.clone(), cx)
+                                });
+                                std::sync::Arc::new(panel)
+                                    as std::sync::Arc<dyn ui::dock::PanelView>
                             }
                         })
                         .collect();
-                    
+
                     workspace.initialize(
                         ui::dock::DockItem::tabs(
                             tab_panels,
@@ -233,28 +244,34 @@ impl DataTableEditor {
                     );
                 }
             });
-            
+
             self.workspace_initialized = true;
         }
     }
 
-    pub fn select_table(&mut self, table_name: String, window: &mut Window, cx: &mut Context<Self>) -> anyhow::Result<()> {
+    pub fn select_table(
+        &mut self,
+        table_name: String,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> anyhow::Result<()> {
         // Check if table is already open
-        if let Some(idx) = self.open_tabs.iter().position(|tab| {
-            matches!(&tab.tab_type, TabType::Table { name, .. } if name == &table_name)
-        }) {
+        if let Some(idx) = self.open_tabs.iter().position(
+            |tab| matches!(&tab.tab_type, TabType::Table { name, .. } if name == &table_name),
+        ) {
             self.active_tab_idx = Some(idx);
             cx.notify();
             return Ok(());
         }
-        
+
         // Check if schema exists for this table
         if self.db.get_schema(&table_name).is_none() {
             return Err(anyhow::anyhow!(
-                "No schema registered for table '{}'", table_name
+                "No schema registered for table '{}'",
+                table_name
             ));
         }
-        
+
         // Create new tab
         let delegate = DataTableView::new(self.db.clone(), table_name.clone())?;
         let table_view = cx.new(|cx| {
@@ -264,58 +281,58 @@ impl DataTableEditor {
             table.sortable = true;
             table
         });
-        
-        let tab_type = TabType::Table { 
-            name: table_name.clone(), 
-            view: table_view 
+
+        let tab_type = TabType::Table {
+            name: table_name.clone(),
+            view: table_view,
         };
-        
+
         let tab = EditorTab {
             id: self.next_tab_id,
             tab_type: tab_type.clone(),
         };
-        
+
         self.next_tab_id += 1;
         self.open_tabs.push(tab);
         self.active_tab_idx = Some(self.open_tabs.len() - 1);
-        
+
         // Add the new tab to the workspace efficiently
         self.add_pending_tabs_to_workspace(window, cx);
-        
+
         cx.emit(DataTableEvent::TableOpened(table_name));
         cx.notify();
-        
+
         Ok(())
     }
-    
+
     pub fn open_query_tab(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let query_view = cx.new(|cx| QueryEditorView::new(self.db.clone(), window, cx));
-        
+
         let tab_type = TabType::Query {
             name: format!("Query {}", self.next_tab_id),
             view: query_view,
         };
-        
+
         let tab = EditorTab {
             id: self.next_tab_id,
             tab_type: tab_type.clone(),
         };
-        
+
         self.next_tab_id += 1;
         self.open_tabs.push(tab);
         self.active_tab_idx = Some(self.open_tabs.len() - 1);
-        
+
         // Add the new tab to the workspace efficiently
         self.add_pending_tabs_to_workspace(window, cx);
-        
+
         cx.notify();
     }
-    
+
     pub fn close_tab(&mut self, tab_idx: usize, cx: &mut Context<Self>) {
         if tab_idx < self.open_tabs.len() {
             let tab = self.open_tabs.remove(tab_idx);
             cx.emit(DataTableEvent::TableClosed(tab.id));
-            
+
             // Adjust active tab
             if self.open_tabs.is_empty() {
                 self.active_tab_idx = None;
@@ -434,120 +451,126 @@ impl DataTableEditor {
         "No table selected".to_string()
     }
 
-
     fn render_toolbar(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let is_table_tab = self.active_tab_idx.and_then(|idx| {
-            self.open_tabs.get(idx).map(|tab| matches!(tab.tab_type, TabType::Table { .. }))
-        }).unwrap_or(false);
+        let is_table_tab = self
+            .active_tab_idx
+            .and_then(|idx| {
+                self.open_tabs
+                    .get(idx)
+                    .map(|tab| matches!(tab.tab_type, TabType::Table { .. }))
+            })
+            .unwrap_or(false);
 
-        v_flex()
-            .w_full()
-            .gap_0()
-            .child(
-                // Main toolbar
-                h_flex()
-                    .w_full()
-                    .gap_2()
-                    .p_2()
-                    .bg(cx.theme().muted.opacity(0.3))
-                    .border_b_1()
-                    .border_color(cx.theme().border)
-                    .child(
-                        Button::new("add-row")
-                            .icon(IconName::Plus)
-                            .label("Add Row")
-                            .small()
-                            .primary()
-                            .disabled(!is_table_tab)
-                            .on_click(cx.listener(|editor, _, _, cx| {
-                                if let Err(e) = editor.add_new_row(cx) {
-                                    tracing::error!("Failed to add row: {}", e);
-                                }
-                                cx.notify();
-                            }))
-                    )
-                    .child(
-                        Button::new("duplicate-row")
-                            .icon(IconName::Copy)
-                            .label("Duplicate")
-                            .tooltip("Duplicate selected row")
-                            .small()
-                            .outline()
-                            .disabled(!is_table_tab)
-                            .on_click(cx.listener(|editor, _, _, cx| {
-                                if let Err(e) = editor.duplicate_selected_row(cx) {
-                                    tracing::error!("Failed to duplicate row: {}", e);
-                                }
-                                cx.notify();
-                            }))
-                    )
-                    .child(
-                        Button::new("delete-row")
-                            .icon(IconName::Close)
-                            .label("Delete")
-                            .small()
-                            .outline()
-                            .disabled(!is_table_tab)
-                            .on_click(cx.listener(|editor, _, _, cx| {
-                                if let Err(e) = editor.delete_selected_row(cx) {
-                                    tracing::error!("Failed to delete row: {}", e);
-                                }
-                                cx.notify();
-                            }))
-                    )
-                    .child(Divider::vertical().h_6())
-                    .child(
-                        Button::new("copy-as-insert")
-                            .icon(IconName::Code)
-                            .label("Copy as SQL")
-                            .tooltip("Copy selected row as INSERT statement")
-                            .small()
-                            .outline()
-                            .disabled(!is_table_tab)
-                            .on_click(cx.listener(|editor, _, _, cx| {
-                                editor.copy_row_as_sql(cx);
-                                cx.notify();
-                            }))
-                    )
-                    .child(Divider::vertical().h_6())
-                    .child(
-                        Button::new("refresh")
-                            .icon(IconName::Refresh)
-                            .label("Refresh")
-                            .small()
-                            .outline()
-                            .disabled(!is_table_tab)
-                            .on_click(cx.listener(|editor, _, _, cx| {
-                                if let Err(e) = editor.refresh_data(cx) {
-                                    tracing::error!("Failed to refresh: {}", e);
-                                }
-                                cx.notify();
-                            }))
-                    )
-                    .child(Divider::vertical().h_6())
-                    .child(
-                        Button::new("new-query")
-                            .icon(IconName::Code)
-                            .label("New Query")
-                            .small()
-                            .outline()
-                            .on_click(cx.listener(|editor, _, window, cx| {
-                                editor.open_query_tab(window, cx);
-                            }))
-                    )
-            )
+        v_flex().w_full().gap_0().child(
+            // Main toolbar
+            h_flex()
+                .w_full()
+                .gap_2()
+                .p_2()
+                .bg(cx.theme().muted.opacity(0.3))
+                .border_b_1()
+                .border_color(cx.theme().border)
+                .child(
+                    Button::new("add-row")
+                        .icon(IconName::Plus)
+                        .label("Add Row")
+                        .small()
+                        .primary()
+                        .disabled(!is_table_tab)
+                        .on_click(cx.listener(|editor, _, _, cx| {
+                            if let Err(e) = editor.add_new_row(cx) {
+                                tracing::error!("Failed to add row: {}", e);
+                            }
+                            cx.notify();
+                        })),
+                )
+                .child(
+                    Button::new("duplicate-row")
+                        .icon(IconName::Copy)
+                        .label("Duplicate")
+                        .tooltip("Duplicate selected row")
+                        .small()
+                        .outline()
+                        .disabled(!is_table_tab)
+                        .on_click(cx.listener(|editor, _, _, cx| {
+                            if let Err(e) = editor.duplicate_selected_row(cx) {
+                                tracing::error!("Failed to duplicate row: {}", e);
+                            }
+                            cx.notify();
+                        })),
+                )
+                .child(
+                    Button::new("delete-row")
+                        .icon(IconName::Close)
+                        .label("Delete")
+                        .small()
+                        .outline()
+                        .disabled(!is_table_tab)
+                        .on_click(cx.listener(|editor, _, _, cx| {
+                            if let Err(e) = editor.delete_selected_row(cx) {
+                                tracing::error!("Failed to delete row: {}", e);
+                            }
+                            cx.notify();
+                        })),
+                )
+                .child(Divider::vertical().h_6())
+                .child(
+                    Button::new("copy-as-insert")
+                        .icon(IconName::Code)
+                        .label("Copy as SQL")
+                        .tooltip("Copy selected row as INSERT statement")
+                        .small()
+                        .outline()
+                        .disabled(!is_table_tab)
+                        .on_click(cx.listener(|editor, _, _, cx| {
+                            editor.copy_row_as_sql(cx);
+                            cx.notify();
+                        })),
+                )
+                .child(Divider::vertical().h_6())
+                .child(
+                    Button::new("refresh")
+                        .icon(IconName::Refresh)
+                        .label("Refresh")
+                        .small()
+                        .outline()
+                        .disabled(!is_table_tab)
+                        .on_click(cx.listener(|editor, _, _, cx| {
+                            if let Err(e) = editor.refresh_data(cx) {
+                                tracing::error!("Failed to refresh: {}", e);
+                            }
+                            cx.notify();
+                        })),
+                )
+                .child(Divider::vertical().h_6())
+                .child(
+                    Button::new("new-query")
+                        .icon(IconName::Code)
+                        .label("New Query")
+                        .small()
+                        .outline()
+                        .on_click(cx.listener(|editor, _, window, cx| {
+                            editor.open_query_tab(window, cx);
+                        })),
+                ),
+        )
     }
 
     fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let db_name = self.database_path
+        let db_name = self
+            .database_path
             .as_ref()
             .and_then(|p| p.file_stem())
             .and_then(|s| s.to_str())
             .unwrap_or("In-Memory Database")
             .to_string();
-        
-        let is_expanded = self.expanded_databases.get(&db_name).copied().unwrap_or(true);
-        
+
+        let is_expanded = self
+            .expanded_databases
+            .get(&db_name)
+            .copied()
+            .unwrap_or(true);
+
         v_flex()
             .w_64()
             .h_full()
@@ -672,7 +695,6 @@ impl DataTableEditor {
                     )
             )
     }
-
 }
 
 impl Panel for DataTableEditor {
@@ -690,9 +712,7 @@ impl Panel for DataTableEditor {
             "Database".to_string()
         };
 
-        div()
-            .child(title)
-            .into_any_element()
+        div().child(title).into_any_element()
     }
 
     fn dump(&self, _cx: &App) -> ui::dock::PanelState {
@@ -705,7 +725,11 @@ impl Panel for DataTableEditor {
 
 impl DataTableEditor {
     /// Plugin-specific save method
-    pub fn plugin_save(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> Result<(), plugin_editor_api::PluginError> {
+    pub fn plugin_save(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> Result<(), plugin_editor_api::PluginError> {
         // Database changes are auto-committed, so no explicit save needed
         // This could be extended to save query tabs or editor state in the future
         tracing::debug!("Table editor save called (changes auto-committed)");
@@ -713,7 +737,11 @@ impl DataTableEditor {
     }
 
     /// Plugin-specific reload method
-    pub fn plugin_reload(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> Result<(), plugin_editor_api::PluginError> {
+    pub fn plugin_reload(
+        &mut self,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Result<(), plugin_editor_api::PluginError> {
         // Refresh all open tables
         if let Err(e) = self.refresh_data(cx) {
             tracing::error!("Failed to reload table data: {}", e);
@@ -746,27 +774,23 @@ impl Render for DataTableEditor {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // Initialize workspace on first render
         self.initialize_workspace_once(window, cx);
-        
+
         let toolbar = self.render_toolbar(cx);
         let sidebar = self.render_sidebar(cx);
-        
+
         v_flex()
             .size_full()
             .bg(cx.theme().background)
             .child(toolbar)
             .child(
-                h_flex()
-                    .flex_1()
-                    .w_full()
-                    .child(sidebar)
-                    .child(
-                        div()
-                            .flex_1()
-                            .h_full()
-                            .when_some(self.workspace.clone(), |this, workspace| {
-                                this.child(workspace)
-                            })
-                    )
+                h_flex().flex_1().w_full().child(sidebar).child(
+                    div()
+                        .flex_1()
+                        .h_full()
+                        .when_some(self.workspace.clone(), |this, workspace| {
+                            this.child(workspace)
+                        }),
+                ),
             )
     }
 }

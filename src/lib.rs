@@ -13,24 +13,24 @@
 //!
 //! - **Table Editor**: Multi-panel editor with table browser, query editor, and data view
 
+use gpui::*;
 use plugin_editor_api::*;
 use std::path::PathBuf;
 use std::sync::Arc;
-use gpui::*;
 use ui::dock::PanelView;
 
 // Table Editor modules
+pub mod cell_editors;
 pub mod database;
 pub mod editor;
-pub mod reflection;
 pub mod query_editor;
+pub mod reflection;
 pub mod table_view;
-pub mod cell_editors;
 mod workspace_panels;
 
 // Re-export main types
-pub use editor::DataTableEditor;
 pub use database::DatabaseManager;
+pub use editor::DataTableEditor;
 pub use reflection::TypeSchema;
 pub use workspace_panels::*;
 
@@ -108,11 +108,10 @@ impl EditorPluginEditor for TableEditorPlugin {
     fn register_editors(&'static self, registry: &mut EditorFactoryRegistry) {
         registry.register_fn(EditorId::new("table-editor"), |file_path, window, cx| {
             let panel = cx.new(|cx| {
-                DataTableEditor::open_database(file_path.clone(), window, cx)
-                    .unwrap_or_else(|e| {
-                        tracing::error!("Failed to open database: {}", e);
-                        DataTableEditor::new(window, cx)
-                    })
+                DataTableEditor::open_database(file_path.clone(), window, cx).unwrap_or_else(|e| {
+                    tracing::error!("Failed to open database: {}", e);
+                    DataTableEditor::new(window, cx)
+                })
             });
 
             let panel_arc: Arc<dyn ui::dock::PanelView> = Arc::new(panel);

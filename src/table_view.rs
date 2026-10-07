@@ -1,13 +1,13 @@
-use gpui::{prelude::*, *};
-use ui::{
-    table::{Column, ColumnSort, Table, TableDelegate},
-    input::{TextInput, InputState, TabSize},
-    ActiveTheme, Size, StyledExt,
-};
-use std::ops::Range;
 use crate::{
     database::{DatabaseManager, RowData},
     reflection::TypeSchema,
+};
+use gpui::{prelude::*, *};
+use std::ops::Range;
+use ui::{
+    input::{InputState, TabSize, TextInput},
+    table::{Column, ColumnSort, Table, TableDelegate},
+    ActiveTheme, Size, StyledExt,
 };
 
 pub struct DataTableState {
@@ -42,20 +42,14 @@ impl DataTableView {
         let total_rows = db.get_row_count(&table_name)?;
         let rows = db.fetch_rows(&table_name, 0, 100)?;
 
-        let mut columns = vec![
-            Column::new("id", "ID")
-                .width(60.)
-                .resizable(false)
-                .fixed(ui::table::ColumnFixed::Left)
-                .sortable(),
-        ];
+        let mut columns = vec![Column::new("id", "ID")
+            .width(60.)
+            .resizable(false)
+            .fixed(ui::table::ColumnFixed::Left)
+            .sortable()];
 
         for field in &schema.fields {
-            columns.push(
-                Column::new(&field.name, &field.name)
-                    .width(150.)
-                    .sortable()
-            );
+            columns.push(Column::new(&field.name, &field.name).width(150.).sortable());
         }
 
         Ok(Self {
@@ -95,26 +89,31 @@ impl DataTableView {
 
         // Filter rows based on text match in any column
         self.rows.retain(|row| {
-            row.cells.iter().any(|cell| {
-                cell.display.to_lowercase().contains(&filter.to_lowercase())
-            })
+            row.cells
+                .iter()
+                .any(|cell| cell.display.to_lowercase().contains(&filter.to_lowercase()))
         });
 
         Ok(())
     }
 
-    pub fn start_edit_cell(&mut self, row_idx: usize, col_idx: usize, window: &mut Window, cx: &mut Context<Table<Self>>) {
+    pub fn start_edit_cell(
+        &mut self,
+        row_idx: usize,
+        col_idx: usize,
+        window: &mut Window,
+        cx: &mut Context<Table<Self>>,
+    ) {
         if let Some(row) = self.rows.get(row_idx) {
             if col_idx > 0 && col_idx <= self.schema.fields.len() {
                 let cell_idx = col_idx - 1;
                 if let Some(cell) = row.cells.get(cell_idx) {
                     // Create an input state for editing
                     let edit_input = cx.new(|cx| {
-                        let mut state = InputState::new(window, cx)
-                            .tab_size(TabSize {
-                                tab_size: 4,
-                                hard_tabs: false,
-                            });
+                        let mut state = InputState::new(window, cx).tab_size(TabSize {
+                            tab_size: 4,
+                            hard_tabs: false,
+                        });
                         state.set_value(&cell.display, window, cx);
                         state
                     });
@@ -127,7 +126,11 @@ impl DataTableView {
         }
     }
 
-    pub fn validate_cell_value(&self, col_idx: usize, value: &str) -> Result<serde_json::Value, String> {
+    pub fn validate_cell_value(
+        &self,
+        col_idx: usize,
+        value: &str,
+    ) -> Result<serde_json::Value, String> {
         if col_idx == 0 || col_idx > self.schema.fields.len() {
             return Err("Invalid column index".to_string());
         }
@@ -135,25 +138,24 @@ impl DataTableView {
         let field = &self.schema.fields[col_idx - 1];
 
         match &field.sql_type {
-            crate::reflection::SqlType::Integer => {
-                value.parse::<i64>()
-                    .map(|v| serde_json::Value::Number(v.into()))
-                    .map_err(|_| format!("'{}' is not a valid integer", value))
-            }
-            crate::reflection::SqlType::Real => {
-                value.parse::<f64>()
-                    .ok()
-                    .and_then(|v| serde_json::Number::from_f64(v))
-                    .map(serde_json::Value::Number)
-                    .ok_or_else(|| format!("'{}' is not a valid number", value))
-            }
-            crate::reflection::SqlType::Boolean => {
-                match value.to_lowercase().as_str() {
-                    "true" | "1" | "yes" | "t" | "y" => Ok(serde_json::Value::Bool(true)),
-                    "false" | "0" | "no" | "f" | "n" => Ok(serde_json::Value::Bool(false)),
-                    _ => Err(format!("'{}' is not a valid boolean (use true/false)", value))
-                }
-            }
+            crate::reflection::SqlType::Integer => value
+                .parse::<i64>()
+                .map(|v| serde_json::Value::Number(v.into()))
+                .map_err(|_| format!("'{}' is not a valid integer", value)),
+            crate::reflection::SqlType::Real => value
+                .parse::<f64>()
+                .ok()
+                .and_then(|v| serde_json::Number::from_f64(v))
+                .map(serde_json::Value::Number)
+                .ok_or_else(|| format!("'{}' is not a valid number", value)),
+            crate::reflection::SqlType::Boolean => match value.to_lowercase().as_str() {
+                "true" | "1" | "yes" | "t" | "y" => Ok(serde_json::Value::Bool(true)),
+                "false" | "0" | "no" | "f" | "n" => Ok(serde_json::Value::Bool(false)),
+                _ => Err(format!(
+                    "'{}' is not a valid boolean (use true/false)",
+                    value
+                )),
+            },
             _ => {
                 if field.nullable && value.trim().is_empty() {
                     Ok(serde_json::Value::Null)
@@ -181,11 +183,9 @@ impl DataTableView {
                 } else {
                     match field.sql_type {
                         crate::reflection::SqlType::Integer => serde_json::Value::Number(0.into()),
-                        crate::reflection::SqlType::Real => {
-                            serde_json::Number::from_f64(0.0)
-                                .map(serde_json::Value::Number)
-                                .unwrap_or(serde_json::Value::Null)
-                        }
+                        crate::reflection::SqlType::Real => serde_json::Number::from_f64(0.0)
+                            .map(serde_json::Value::Number)
+                            .unwrap_or(serde_json::Value::Null),
                         crate::reflection::SqlType::Boolean => serde_json::Value::Bool(false),
                         _ => serde_json::Value::String(String::new()),
                     }
@@ -215,15 +215,18 @@ impl DataTableView {
         if let Some(row) = self.rows.get(row_idx) {
             if col_idx > 0 && col_idx <= self.schema.fields.len() {
                 let field = &self.schema.fields[col_idx - 1];
-                self.db.update_cell(&self.table_name, row.id, &field.name, value)?;
+                self.db
+                    .update_cell(&self.table_name, row.id, &field.name, value)?;
                 self.refresh_rows(0, 100)?;
             }
         }
         Ok(())
     }
-    
+
     pub fn save_editing_cell(&mut self, cx: &App) -> anyhow::Result<()> {
-        if let (Some((row_idx, col_idx)), Some(ref edit_input)) = (self.state.editing_cell, &self.state.edit_input) {
+        if let (Some((row_idx, col_idx)), Some(ref edit_input)) =
+            (self.state.editing_cell, &self.state.edit_input)
+        {
             let value_str = edit_input.read(cx).value().to_string();
 
             // Validate the value
@@ -232,7 +235,8 @@ impl DataTableView {
                     if let Some(row) = self.rows.get(row_idx) {
                         if col_idx > 0 && col_idx <= self.schema.fields.len() {
                             let field = &self.schema.fields[col_idx - 1];
-                            self.db.update_cell(&self.table_name, row.id, &field.name, value)?;
+                            self.db
+                                .update_cell(&self.table_name, row.id, &field.name, value)?;
                             self.refresh_rows(0, 100)?;
                         }
                     }
@@ -268,9 +272,8 @@ impl DataTableView {
 
     pub fn duplicate_row(&mut self, row_idx: usize) -> anyhow::Result<()> {
         if let Some(row) = self.rows.get(row_idx) {
-            let values: Vec<serde_json::Value> = row.cells.iter()
-                .map(|cell| cell.value.clone())
-                .collect();
+            let values: Vec<serde_json::Value> =
+                row.cells.iter().map(|cell| cell.value.clone()).collect();
 
             self.db.insert_row(&self.table_name, values)?;
             self.refresh_rows(0, 1000)?;
@@ -280,11 +283,12 @@ impl DataTableView {
 
     pub fn copy_row_as_insert(&self, row_idx: usize) -> Option<String> {
         if let Some(row) = self.rows.get(row_idx) {
-            let field_names: Vec<String> = self.schema.fields.iter()
-                .map(|f| f.name.clone())
-                .collect();
+            let field_names: Vec<String> =
+                self.schema.fields.iter().map(|f| f.name.clone()).collect();
 
-            let values: Vec<String> = row.cells.iter()
+            let values: Vec<String> = row
+                .cells
+                .iter()
                 .map(|cell| match &cell.value {
                     serde_json::Value::Null => "NULL".to_string(),
                     serde_json::Value::String(s) => format!("'{}'", s.replace("'", "''")),
@@ -311,11 +315,14 @@ impl DataTableView {
             self.total_rows
         )
     }
-
 }
 
 impl DataTableView {
-    pub fn enable_features(&self, table: &mut ui::table::Table<Self>, cx: &mut Context<ui::table::Table<Self>>) {
+    pub fn enable_features(
+        &self,
+        table: &mut ui::table::Table<Self>,
+        cx: &mut Context<ui::table::Table<Self>>,
+    ) {
         table.col_fixed = true;
         table.col_resizable = true;
         table.sortable = true;
@@ -366,9 +373,7 @@ impl TableDelegate for DataTableView {
                 table.delegate_mut().state.selected_row = Some(row_ix);
                 cx.notify();
             }))
-            .when(is_selected, |this| {
-                this.bg(cx.theme().accent.opacity(0.1))
-            })
+            .when(is_selected, |this| this.bg(cx.theme().accent.opacity(0.1)))
     }
 
     fn render_td(
@@ -423,8 +428,8 @@ impl TableDelegate for DataTableView {
                                             .text_sm()
                                             .px_2()
                                             .py_1()
-                                            .border_0()
-                                    )
+                                            .border_0(),
+                                    ),
                             )
                             .when_some(self.state.validation_error.as_ref(), |this, error| {
                                 this.child(
@@ -440,7 +445,7 @@ impl TableDelegate for DataTableView {
                                         .text_xs()
                                         .rounded_sm()
                                         .shadow_lg()
-                                        .child(error.clone())
+                                        .child(error.clone()),
                                 )
                             })
                             .into_any_element();

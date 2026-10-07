@@ -1,8 +1,9 @@
+use crate::{query_editor::QueryEditorView, table_view::DataTableView};
 use gpui::*;
-use ui::{ActiveTheme, dock::{Panel, PanelEvent}, v_flex, table::Table};
-use crate::{
-    table_view::DataTableView,
-    query_editor::QueryEditorView,
+use ui::{
+    dock::{Panel, PanelEvent},
+    table::Table,
+    v_flex, ActiveTheme,
 };
 
 /// Table Panel - wraps a single table view
@@ -30,9 +31,7 @@ impl EventEmitter<PanelEvent> for TablePanelWrapper {}
 
 impl Render for TablePanelWrapper {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .size_full()
-            .child(self.table_view.clone())
+        div().size_full().child(self.table_view.clone())
     }
 }
 
@@ -84,9 +83,7 @@ impl EventEmitter<PanelEvent> for QueryPanelWrapper {}
 
 impl Render for QueryPanelWrapper {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .size_full()
-            .child(self.query_view.clone())
+        div().size_full().child(self.query_view.clone())
     }
 }
 
@@ -140,13 +137,13 @@ impl Render for WelcomePanelWrapper {
                     .text_xl()
                     .font_weight(gpui::FontWeight::BOLD)
                     .text_color(cx.theme().foreground)
-                    .child("Welcome to Database Editor")
+                    .child("Welcome to Database Editor"),
             )
             .child(
                 div()
                     .text_sm()
                     .text_color(cx.theme().muted_foreground)
-                    .child("Select a table from the sidebar or create a new query")
+                    .child("Select a table from the sidebar or create a new query"),
             )
     }
 }
