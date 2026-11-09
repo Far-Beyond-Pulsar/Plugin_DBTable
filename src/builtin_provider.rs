@@ -53,6 +53,7 @@ impl BuiltinEditorProvider for TableEditorBuiltinProvider {
 plugin_manager::inventory::submit! {
     plugin_manager::PluginEditorProvider {
         origin: pulsar_plugins::origin!(),
+        id: "com.pulsar.table-editor",
         create: || Arc::new(TableEditorBuiltinProvider),
     }
 }
