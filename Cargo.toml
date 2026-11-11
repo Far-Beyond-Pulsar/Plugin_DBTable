@@ -8,6 +8,7 @@ crate-type = ["cdylib", "rlib"]
 name = "editor_table_plugin"
 
 [dependencies]
+engine_fs = { workspace = true }
 # The plugin's descriptor and its editor provider's registration.
 pulsar_plugins = { workspace = true }
 plugin_manager = { workspace = true }
@@ -43,3 +44,6 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 
 # Pin to satisfy both ui (^5) and gpui-ce (^5.3.5)
 open = "5.3.5"
+
+[lints]
+workspace = true
