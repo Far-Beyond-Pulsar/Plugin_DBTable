@@ -462,7 +462,6 @@ impl QueryEditor {
     }
 
     pub fn export_to_csv(&self, results: &QueryResult) -> anyhow::Result<()> {
-        use std::fs::File;
         use std::io::Write;
 
         let timestamp = std::time::SystemTime::now()
@@ -470,7 +469,7 @@ impl QueryEditor {
             .as_secs();
         let filename = format!("query_results_{}.csv", timestamp);
 
-        let mut file = File::create(&filename)?;
+        let mut file = engine_fs::virtual_fs::open_write(std::path::Path::new(&filename))?;
 
         // Write header
         writeln!(file, "{}", results.columns.join(","))?;
@@ -491,15 +490,13 @@ impl QueryEditor {
                 .join(",");
             writeln!(file, "{}", row_str)?;
         }
+        file.finish()?;
 
         tracing::debug!("✓ Exported {} rows to {}", results.row_count, filename);
         Ok(())
     }
 
     pub fn export_to_json(&self, results: &QueryResult) -> anyhow::Result<()> {
-        use std::fs::File;
-        use std::io::Write;
-
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?
             .as_secs();
@@ -517,8 +514,7 @@ impl QueryEditor {
         }
 
         let json = serde_json::to_string_pretty(&rows_json)?;
-        let mut file = File::create(&filename)?;
-        file.write_all(json.as_bytes())?;
+        engine_fs::virtual_fs::write_file(std::path::Path::new(&filename), json.as_bytes())?;
 
         tracing::info!("✓ Exported {} rows to {}", results.row_count, filename);
         Ok(())
