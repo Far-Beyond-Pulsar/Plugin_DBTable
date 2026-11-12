@@ -129,12 +129,6 @@ impl EditorPluginComponents for TableEditorPlugin {
         Vec::new()
     }
 }
-impl EditorPluginSubsystems for TableEditorPlugin {
-    fn subsystems(&self) -> Vec<Box<dyn Subsystem>> {
-        Vec::new()
-    }
-}
-
 // This plugin's descriptor (`pulsar-plugin.toml`): linking the crate installs it.
 pulsar_plugins::installed!("pulsar-plugin.toml", build);
 
