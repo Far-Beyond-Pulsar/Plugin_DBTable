@@ -60,6 +60,7 @@ impl EditorPlugin for TableEditorPlugin {
                 structure: FileStructure::Standalone,
                 default_content: serde_json::Value::Null,
                 creation_directory: None,
+                cook: plugin_editor_api::file_types::copy_file_for_cook,
                 categories: vec!["Data".to_string(), "SQLite".to_string()],
             },
             FileTypeDefinition {
@@ -71,6 +72,7 @@ impl EditorPlugin for TableEditorPlugin {
                 structure: FileStructure::Standalone,
                 default_content: serde_json::Value::Null,
                 creation_directory: None,
+                cook: plugin_editor_api::file_types::copy_file_for_cook,
                 categories: vec!["Data".to_string(), "SQLite".to_string()],
             },
             FileTypeDefinition {
@@ -82,6 +84,7 @@ impl EditorPlugin for TableEditorPlugin {
                 structure: FileStructure::Standalone,
                 default_content: serde_json::Value::Null,
                 creation_directory: None,
+                cook: plugin_editor_api::file_types::copy_file_for_cook,
                 categories: vec!["Data".to_string(), "SQLite".to_string()],
             },
         ]
