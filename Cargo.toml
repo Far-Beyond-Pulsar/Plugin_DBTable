@@ -13,7 +13,7 @@ engine_fs = { workspace = true }
 pulsar_plugins = { workspace = true }
 plugin_manager = { workspace = true }
 # Plugin API
-plugin_editor_api = { workspace = true }
+plugin_editor_api = { workspace = true, features = ["editor"] }
 
 # UI dependencies
 gpui-ce = { workspace = true }
