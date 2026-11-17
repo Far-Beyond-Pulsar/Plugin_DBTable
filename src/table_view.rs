@@ -7,7 +7,7 @@ use std::ops::Range;
 use ui::{
     input::{InputState, TabSize, TextInput},
     table::{Column, ColumnSort, Table, TableDelegate},
-    ActiveTheme, Size, StyledExt,
+    ActiveTheme, StyledExt,
 };
 
 pub struct DataTableState {
@@ -27,7 +27,6 @@ pub struct DataTableView {
     schema: TypeSchema,
     rows: Vec<RowData>,
     columns: Vec<Column>,
-    size: Size,
     total_rows: usize,
     visible_range: Range<usize>,
     pub state: DataTableState,
@@ -58,7 +57,6 @@ impl DataTableView {
             schema,
             rows,
             columns,
-            size: Size::default(),
             total_rows,
             visible_range: 0..0,
             state: DataTableState {
