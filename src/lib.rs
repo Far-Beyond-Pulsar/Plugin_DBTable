@@ -15,9 +15,7 @@
 
 use gpui::*;
 use plugin_editor_api::*;
-use std::path::PathBuf;
 use std::sync::Arc;
-use ui::dock::PanelView;
 
 // Table Editor modules
 pub mod cell_editors;

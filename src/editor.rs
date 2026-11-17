@@ -643,7 +643,7 @@ impl DataTableEditor {
                                 matches!(&tab.tab_type, TabType::Table { name, .. } if name == table)
                             });
                             let table_name = table.clone();
-                            
+
                             div()
                                 .id(("table-item", idx))
                                 .flex()

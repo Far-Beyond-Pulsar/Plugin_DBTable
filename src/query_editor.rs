@@ -9,7 +9,7 @@ use ui::{
     input::{InputState, TabSize, TextInput},
     label::Label,
     table::{Column, Table, TableDelegate},
-    v_flex, ActiveTheme, Disableable, IconName, Sizable, Size, StyledExt,
+    v_flex, ActiveTheme, Disableable, IconName, Sizable, StyledExt,
 };
 
 pub struct QueryEditor {
@@ -43,7 +43,6 @@ pub struct QueryResult {
 pub struct QueryResultsTableView {
     result: QueryResult,
     columns: Vec<Column>,
-    size: Size,
     visible_range: Range<usize>,
 }
 
@@ -70,7 +69,6 @@ impl QueryResultsTableView {
         Self {
             result,
             columns,
-            size: Size::default(),
             visible_range: 0..0,
         }
     }
