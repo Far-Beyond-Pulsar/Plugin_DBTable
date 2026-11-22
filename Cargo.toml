@@ -47,3 +47,8 @@ open = "5.3.5"
 
 [lints]
 workspace = true
+
+[features]
+# The plugin as a library of its own, loaded by the editor from plugins/editor:
+# cargo build -p <this package> --release --features dll
+dll = ["plugin_editor_api/editor", "plugin_editor_api/shared-dylibs"]

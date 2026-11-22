@@ -148,3 +148,8 @@ pub fn build(p: &mut pulsar_plugins::PluginBuilder) {
 /// The plugin's editor provider, registered by `build` (origin-gated).
 mod builtin_provider;
 mod examples;
+
+// The plugin as a library of its own, loaded by the editor from `plugins/editor`
+// (`cargo build -p <this package> --release --features dll`).
+#[cfg(feature = "dll")]
+plugin_editor_api::export_library_plugin!();
